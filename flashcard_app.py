@@ -185,7 +185,7 @@ class FlashcardApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Flashcard Master")
-        self.root.geometry("1000x750")
+        self.root.geometry("1000x700")
         self.root.resizable(False, False)
 
         # Modern color scheme with gradients
@@ -230,22 +230,22 @@ class FlashcardApp:
             self.root,
             self.colors['gradient_start'],
             self.colors['gradient_end'],
-            height=100
+            height=80
         )
         header.pack(fill=tk.X)
 
         # Title
         header.create_text(
-            500, 50,
+            500, 40,
             text="✨ Flashcard Master",
-            font=("Segoe UI", 32, "bold"),
+            font=("Segoe UI", 28, "bold"),
             fill="white",
             tags="title"
         )
 
         # Main container
         main_frame = tk.Frame(self.root, bg=self.colors['bg'])
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=50, pady=40)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=25)
 
         # Stats bar
         stats_frame = tk.Frame(main_frame, bg=self.colors['bg'])
@@ -278,13 +278,13 @@ class FlashcardApp:
 
         # Card display area
         card_frame = tk.Frame(main_frame, bg=self.colors['bg'])
-        card_frame.pack(pady=(0, 30))
+        card_frame.pack(pady=(0, 20))
 
         # Card canvas for rounded corners
         self.card_canvas = tk.Canvas(
             card_frame,
             width=720,
-            height=384,
+            height=324,
             bg=self.colors['bg'],
             highlightthickness=0
         )
@@ -295,7 +295,7 @@ class FlashcardApp:
             self.card_canvas,
             self.colors['card_front'],
             700,
-            360
+            300
         )
         self.card_bg.place(x=10, y=10)
 
@@ -303,7 +303,7 @@ class FlashcardApp:
         self.card_label = tk.Label(
             self.card_bg,
             text="Click 'Add Card' to begin!",
-            font=("Segoe UI", 22),
+            font=("Segoe UI", 20),
             bg=self.colors['card_front'],
             fg=self.colors['text'],
             wraplength=650,
@@ -329,7 +329,7 @@ class FlashcardApp:
 
         # Navigation buttons
         nav_frame = tk.Frame(button_frame, bg=self.colors['bg'])
-        nav_frame.pack(pady=(0, 20))
+        nav_frame.pack(pady=(0, 12))
 
         self.prev_btn = ModernButton(
             nav_frame,
@@ -337,7 +337,7 @@ class FlashcardApp:
             command=self.prev_card,
             bg_color=self.colors['primary'],
             width=130,
-            height=50
+            height=42
         )
         self.prev_btn.pack(side=tk.LEFT, padx=8)
 
@@ -347,7 +347,7 @@ class FlashcardApp:
             command=self.flip_card,
             bg_color=self.colors['secondary'],
             width=150,
-            height=50
+            height=42
         )
         self.flip_btn.pack(side=tk.LEFT, padx=8)
 
@@ -357,7 +357,7 @@ class FlashcardApp:
             command=self.next_card,
             bg_color=self.colors['primary'],
             width=130,
-            height=50
+            height=42
         )
         self.next_btn.pack(side=tk.LEFT, padx=8)
 
@@ -371,7 +371,7 @@ class FlashcardApp:
             command=self.add_card,
             bg_color=self.colors['secondary'],
             width=120,
-            height=45
+            height=40
         ).pack(side=tk.LEFT, padx=6)
 
         ModernButton(
@@ -380,7 +380,7 @@ class FlashcardApp:
             command=self.edit_card,
             bg_color=self.colors['accent'],
             width=100,
-            height=45
+            height=40
         ).pack(side=tk.LEFT, padx=6)
 
         ModernButton(
@@ -389,7 +389,7 @@ class FlashcardApp:
             command=self.delete_card,
             bg_color=self.colors['danger'],
             width=100,
-            height=45
+            height=40
         ).pack(side=tk.LEFT, padx=6)
 
         ModernButton(
@@ -398,7 +398,7 @@ class FlashcardApp:
             command=self.shuffle_cards,
             bg_color="#8B5CF6",
             width=110,
-            height=45
+            height=40
         ).pack(side=tk.LEFT, padx=6)
 
         # Keyboard bindings with focus check
@@ -601,7 +601,7 @@ class CardDialog:
         # Create dialog window
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
-        self.dialog.geometry("600x550")
+        self.dialog.geometry("600x600")
         self.dialog.resizable(False, False)
         self.dialog.configure(bg=colors['bg'])
 
@@ -612,40 +612,41 @@ class CardDialog:
         # Center the dialog
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (600 // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (550 // 2)
-        self.dialog.geometry(f"600x550+{x}+{y}")
+        y = (self.dialog.winfo_screenheight() // 2) - (600 // 2)
+        self.dialog.geometry(f"600x600+{x}+{y}")
 
         # Header
-        header = tk.Frame(self.dialog, bg=colors['primary'], height=80)
+        header = tk.Frame(self.dialog, bg=colors['primary'], height=70)
         header.pack(fill=tk.X)
         header.pack_propagate(False)
 
         tk.Label(
             header,
             text=title,
-            font=("Segoe UI", 20, "bold"),
+            font=("Segoe UI", 18, "bold"),
             bg=colors['primary'],
             fg="white"
-        ).pack(pady=25)
+        ).pack(pady=20)
 
         # Content
         content_frame = tk.Frame(self.dialog, bg=colors['bg'])
-        content_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=30)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=25)
 
         # Front of card
         tk.Label(
             content_frame,
-            text="Front (Question)",
+            text="📝 Front (Question)",
             font=("Segoe UI", 12, "bold"),
             bg=colors['bg'],
             fg=colors['text']
         ).pack(anchor=tk.W, pady=(0, 8))
 
         front_container = tk.Frame(content_frame, bg="white", relief=tk.FLAT, bd=2)
-        front_container.pack(fill=tk.BOTH, expand=True, pady=(0, 25))
+        front_container.pack(fill=tk.X, pady=(0, 20))
 
         self.front_text = tk.Text(
             front_container,
+            height=6,
             font=("Segoe UI", 11),
             wrap=tk.WORD,
             relief=tk.FLAT,
@@ -659,17 +660,18 @@ class CardDialog:
         # Back of card
         tk.Label(
             content_frame,
-            text="Back (Answer)",
+            text="💡 Back (Answer)",
             font=("Segoe UI", 12, "bold"),
             bg=colors['bg'],
             fg=colors['text']
         ).pack(anchor=tk.W, pady=(0, 8))
 
         back_container = tk.Frame(content_frame, bg="white", relief=tk.FLAT, bd=2)
-        back_container.pack(fill=tk.BOTH, expand=True, pady=(0, 25))
+        back_container.pack(fill=tk.X, pady=(0, 20))
 
         self.back_text = tk.Text(
             back_container,
+            height=6,
             font=("Segoe UI", 11),
             wrap=tk.WORD,
             relief=tk.FLAT,
