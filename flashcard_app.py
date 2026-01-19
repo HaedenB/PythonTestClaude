@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Modern Flashcard App using Tkinter
-A beautiful, feature-rich flashcard application with card flipping animation
+A beautiful, feature-rich flashcard application with modern web-inspired design
 """
 
 import tkinter as tk
@@ -10,38 +10,173 @@ import json
 import os
 
 
-class ModernButton(tk.Button):
-    """Custom styled button for modern look"""
-    def __init__(self, parent, **kwargs):
-        # Extract font if provided, otherwise use default
-        font = kwargs.pop('font', ("Helvetica", 11))
+class GradientFrame(tk.Canvas):
+    """Frame with gradient background"""
+    def __init__(self, parent, color1, color2, **kwargs):
+        tk.Canvas.__init__(self, parent, **kwargs)
+        self.color1 = color1
+        self.color2 = color2
+        self.bind("<Configure>", self._draw_gradient)
 
-        super().__init__(
-            parent,
-            relief=tk.FLAT,
-            borderwidth=0,
-            cursor="hand2",
-            font=font,
-            **kwargs
+    def _draw_gradient(self, event=None):
+        """Draw gradient on canvas"""
+        self.delete("gradient")
+        width = self.winfo_width()
+        height = self.winfo_height()
+        limit = height
+
+        # Parse colors
+        r1, g1, b1 = self._hex_to_rgb(self.color1)
+        r2, g2, b2 = self._hex_to_rgb(self.color2)
+
+        # Draw gradient lines
+        for i in range(limit):
+            nr = int(r1 + (r2 - r1) * i / limit)
+            ng = int(g1 + (g2 - g1) * i / limit)
+            nb = int(b1 + (b2 - b1) * i / limit)
+            color = f'#{nr:02x}{ng:02x}{nb:02x}'
+            self.create_line(0, i, width, i, tags=("gradient",), fill=color)
+
+    def _hex_to_rgb(self, hex_color):
+        """Convert hex color to RGB tuple"""
+        hex_color = hex_color.lstrip('#')
+        return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+
+class ModernButton(tk.Canvas):
+    """Modern button with rounded corners and hover effects"""
+    def __init__(self, parent, text, command, bg_color, fg_color="white",
+                 width=140, height=45, **kwargs):
+        super().__init__(parent, width=width, height=height,
+                        bg=parent.cget('bg'), highlightthickness=0, **kwargs)
+
+        self.text = text
+        self.command = command
+        self.bg_color = bg_color
+        self.fg_color = fg_color
+        self.width = width
+        self.height = height
+        self.hover_color = self._lighten_color(bg_color)
+
+        self.draw_button(self.bg_color)
+
+        self.bind("<Button-1>", self._on_click)
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+
+    def draw_button(self, color):
+        """Draw rounded rectangle button"""
+        self.delete("all")
+
+        # Create rounded rectangle using polygons
+        r = 12  # Corner radius
+        x0, y0 = 0, 0
+        x1, y1 = self.width, self.height
+
+        points = [
+            x0+r, y0,
+            x1-r, y0,
+            x1, y0,
+            x1, y0+r,
+            x1, y1-r,
+            x1, y1,
+            x1-r, y1,
+            x0+r, y1,
+            x0, y1,
+            x0, y1-r,
+            x0, y0+r,
+            x0, y0
+        ]
+
+        self.create_polygon(points, fill=color, smooth=True, tags="button")
+
+        # Add text
+        self.create_text(
+            self.width // 2,
+            self.height // 2,
+            text=self.text,
+            fill=self.fg_color,
+            font=("Segoe UI", 11, "bold"),
+            tags="text"
         )
-        self.bind("<Enter>", self.on_enter)
-        self.bind("<Leave>", self.on_leave)
-        self.default_bg = kwargs.get('bg', '#6C63FF')
 
-    def on_enter(self, e):
-        self['background'] = self.lighten_color(self.default_bg)
+    def _on_click(self, event):
+        if self.command:
+            self.command()
 
-    def on_leave(self, e):
-        self['background'] = self.default_bg
+    def _on_enter(self, event):
+        self.draw_button(self.hover_color)
 
-    def lighten_color(self, hex_color):
-        """Lighten a hex color by 10%"""
+    def _on_leave(self, event):
+        self.draw_button(self.bg_color)
+
+    def _lighten_color(self, hex_color):
+        """Lighten a hex color"""
         hex_color = hex_color.lstrip('#')
         r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-        r = min(255, int(r * 1.1))
-        g = min(255, int(g * 1.1))
-        b = min(255, int(b * 1.1))
+        r = min(255, int(r * 1.15))
+        g = min(255, int(g * 1.15))
+        b = min(255, int(b * 1.15))
         return f'#{r:02x}{g:02x}{b:02x}'
+
+
+class RoundedCard(tk.Canvas):
+    """Rounded card widget for modern look"""
+    def __init__(self, parent, bg_color, width, height, **kwargs):
+        super().__init__(parent, width=width, height=height,
+                        bg=parent.cget('bg'), highlightthickness=0, **kwargs)
+
+        self.bg_color = bg_color
+        self.card_width = width
+        self.card_height = height
+
+        self.draw_card()
+
+    def draw_card(self):
+        """Draw rounded rectangle card with shadow"""
+        # Shadow
+        r = 20
+        shadow_offset = 4
+        x0, y0 = shadow_offset, shadow_offset
+        x1, y1 = self.card_width + shadow_offset, self.card_height + shadow_offset
+
+        shadow_points = [
+            x0+r, y0,
+            x1-r, y0,
+            x1, y0,
+            x1, y0+r,
+            x1, y1-r,
+            x1, y1,
+            x1-r, y1,
+            x0+r, y1,
+            x0, y1,
+            x0, y1-r,
+            x0, y0+r,
+            x0, y0
+        ]
+
+        self.create_polygon(shadow_points, fill="#D0D0D0", smooth=True, tags="shadow")
+
+        # Main card
+        x0, y0 = 0, 0
+        x1, y1 = self.card_width, self.card_height
+
+        card_points = [
+            x0+r, y0,
+            x1-r, y0,
+            x1, y0,
+            x1, y0+r,
+            x1, y1-r,
+            x1, y1,
+            x1-r, y1,
+            x0+r, y1,
+            x0, y1,
+            x0, y1-r,
+            x0, y0+r,
+            x0, y0
+        ]
+
+        self.create_polygon(card_points, fill=self.bg_color, smooth=True, tags="card")
 
 
 class FlashcardApp:
@@ -50,19 +185,23 @@ class FlashcardApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Flashcard Master")
-        self.root.geometry("900x650")
+        self.root.geometry("1000x750")
         self.root.resizable(False, False)
 
-        # Color scheme
+        # Modern color scheme with gradients
         self.colors = {
-            'primary': '#6C63FF',
-            'secondary': '#4CAF50',
-            'danger': '#FF6B6B',
-            'bg': '#F5F5F5',
+            'gradient_start': '#667EEA',
+            'gradient_end': '#764BA2',
+            'primary': '#667EEA',
+            'secondary': '#10B981',
+            'accent': '#F59E0B',
+            'danger': '#EF4444',
+            'bg': '#F9FAFB',
             'card_front': '#FFFFFF',
-            'card_back': '#E8F4F8',
-            'text': '#2C3E50',
-            'text_light': '#7F8C8D'
+            'card_back': '#EFF6FF',
+            'text': '#1F2937',
+            'text_light': '#6B7280',
+            'text_lighter': '#9CA3AF'
         }
 
         self.root.configure(bg=self.colors['bg'])
@@ -86,185 +225,218 @@ class FlashcardApp:
     def create_ui(self):
         """Create the user interface"""
 
-        # Header
-        header_frame = tk.Frame(self.root, bg=self.colors['primary'], height=80)
-        header_frame.pack(fill=tk.X)
-        header_frame.pack_propagate(False)
-
-        title_label = tk.Label(
-            header_frame,
-            text="📚 Flashcard Master",
-            font=("Helvetica", 28, "bold"),
-            bg=self.colors['primary'],
-            fg="white"
+        # Header with gradient
+        header = GradientFrame(
+            self.root,
+            self.colors['gradient_start'],
+            self.colors['gradient_end'],
+            height=100
         )
-        title_label.pack(pady=20)
+        header.pack(fill=tk.X)
+
+        # Title
+        header.create_text(
+            500, 50,
+            text="✨ Flashcard Master",
+            font=("Segoe UI", 32, "bold"),
+            fill="white",
+            tags="title"
+        )
 
         # Main container
         main_frame = tk.Frame(self.root, bg=self.colors['bg'])
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=30)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=50, pady=40)
 
-        # Progress label
+        # Stats bar
+        stats_frame = tk.Frame(main_frame, bg=self.colors['bg'])
+        stats_frame.pack(fill=tk.X, pady=(0, 25))
+
+        # Progress badge
+        progress_container = tk.Frame(stats_frame, bg="#EEF2FF", relief=tk.FLAT)
+        progress_container.pack(side=tk.LEFT)
+
         self.progress_label = tk.Label(
-            main_frame,
+            progress_container,
             text="Card 0 of 0",
-            font=("Helvetica", 12),
+            font=("Segoe UI", 11, "bold"),
+            bg="#EEF2FF",
+            fg=self.colors['primary'],
+            padx=20,
+            pady=8
+        )
+        self.progress_label.pack()
+
+        # Keyboard hint
+        hint_label = tk.Label(
+            stats_frame,
+            text="💡 Tip: Use ← → arrows to navigate, Space to flip",
+            font=("Segoe UI", 10),
             bg=self.colors['bg'],
-            fg=self.colors['text_light']
+            fg=self.colors['text_lighter']
         )
-        self.progress_label.pack(pady=(0, 15))
+        hint_label.pack(side=tk.RIGHT)
 
-        # Card frame (with shadow effect)
-        shadow_frame = tk.Frame(
-            main_frame,
-            bg="#D0D0D0",
-            width=700,
-            height=350
+        # Card display area
+        card_frame = tk.Frame(main_frame, bg=self.colors['bg'])
+        card_frame.pack(pady=(0, 30))
+
+        # Card canvas for rounded corners
+        self.card_canvas = tk.Canvas(
+            card_frame,
+            width=720,
+            height=384,
+            bg=self.colors['bg'],
+            highlightthickness=0
         )
-        shadow_frame.pack()
-        shadow_frame.pack_propagate(False)
+        self.card_canvas.pack()
 
-        card_container = tk.Frame(
-            shadow_frame,
-            bg=self.colors['card_front'],
-            width=700,
-            height=350
+        # Card background with shadow and rounded corners
+        self.card_bg = RoundedCard(
+            self.card_canvas,
+            self.colors['card_front'],
+            700,
+            360
         )
-        card_container.place(x=-3, y=-3, width=700, height=350)
-        card_container.pack_propagate(False)
+        self.card_bg.place(x=10, y=10)
 
-        # Card content
+        # Card text
         self.card_label = tk.Label(
-            card_container,
+            self.card_bg,
             text="Click 'Add Card' to begin!",
-            font=("Helvetica", 24),
+            font=("Segoe UI", 22),
             bg=self.colors['card_front'],
             fg=self.colors['text'],
             wraplength=650,
             justify=tk.CENTER
         )
-        self.card_label.pack(expand=True)
+        self.card_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
-        # Flip indicator
+        # Flip indicator badge
         self.flip_indicator = tk.Label(
-            card_container,
+            self.card_bg,
             text="",
-            font=("Helvetica", 10, "italic"),
+            font=("Segoe UI", 10, "bold"),
             bg=self.colors['card_front'],
-            fg=self.colors['text_light']
+            fg=self.colors['text_light'],
+            padx=15,
+            pady=5
         )
-        self.flip_indicator.pack(side=tk.BOTTOM, pady=10)
+        self.flip_indicator.place(x=20, y=20)
 
         # Button container
         button_frame = tk.Frame(main_frame, bg=self.colors['bg'])
-        button_frame.pack(pady=30)
+        button_frame.pack()
 
         # Navigation buttons
         nav_frame = tk.Frame(button_frame, bg=self.colors['bg'])
-        nav_frame.pack(pady=(0, 15))
+        nav_frame.pack(pady=(0, 20))
 
         self.prev_btn = ModernButton(
             nav_frame,
             text="← Previous",
             command=self.prev_card,
-            bg=self.colors['primary'],
-            fg="white",
-            width=12,
-            pady=12
+            bg_color=self.colors['primary'],
+            width=130,
+            height=50
         )
-        self.prev_btn.pack(side=tk.LEFT, padx=5)
+        self.prev_btn.pack(side=tk.LEFT, padx=8)
 
         self.flip_btn = ModernButton(
             nav_frame,
             text="🔄 Flip Card",
             command=self.flip_card,
-            bg=self.colors['secondary'],
-            fg="white",
-            width=12,
-            pady=12,
-            font=("Helvetica", 12, "bold")
+            bg_color=self.colors['secondary'],
+            width=150,
+            height=50
         )
-        self.flip_btn.pack(side=tk.LEFT, padx=5)
+        self.flip_btn.pack(side=tk.LEFT, padx=8)
 
         self.next_btn = ModernButton(
             nav_frame,
             text="Next →",
             command=self.next_card,
-            bg=self.colors['primary'],
-            fg="white",
-            width=12,
-            pady=12
+            bg_color=self.colors['primary'],
+            width=130,
+            height=50
         )
-        self.next_btn.pack(side=tk.LEFT, padx=5)
+        self.next_btn.pack(side=tk.LEFT, padx=8)
 
         # Management buttons
         manage_frame = tk.Frame(button_frame, bg=self.colors['bg'])
         manage_frame.pack()
 
-        add_btn = ModernButton(
+        ModernButton(
             manage_frame,
             text="➕ Add Card",
             command=self.add_card,
-            bg=self.colors['secondary'],
-            fg="white",
-            width=12,
-            pady=10
-        )
-        add_btn.pack(side=tk.LEFT, padx=5)
+            bg_color=self.colors['secondary'],
+            width=120,
+            height=45
+        ).pack(side=tk.LEFT, padx=6)
 
-        edit_btn = ModernButton(
+        ModernButton(
             manage_frame,
-            text="✏️ Edit Card",
+            text="✏️ Edit",
             command=self.edit_card,
-            bg=self.colors['primary'],
-            fg="white",
-            width=12,
-            pady=10
-        )
-        edit_btn.pack(side=tk.LEFT, padx=5)
+            bg_color=self.colors['accent'],
+            width=100,
+            height=45
+        ).pack(side=tk.LEFT, padx=6)
 
-        delete_btn = ModernButton(
+        ModernButton(
             manage_frame,
-            text="🗑️ Delete Card",
+            text="🗑️ Delete",
             command=self.delete_card,
-            bg=self.colors['danger'],
-            fg="white",
-            width=12,
-            pady=10
-        )
-        delete_btn.pack(side=tk.LEFT, padx=5)
+            bg_color=self.colors['danger'],
+            width=100,
+            height=45
+        ).pack(side=tk.LEFT, padx=6)
 
-        shuffle_btn = ModernButton(
+        ModernButton(
             manage_frame,
             text="🔀 Shuffle",
             command=self.shuffle_cards,
-            bg="#9B59B6",
-            fg="white",
-            width=12,
-            pady=10
-        )
-        shuffle_btn.pack(side=tk.LEFT, padx=5)
+            bg_color="#8B5CF6",
+            width=110,
+            height=45
+        ).pack(side=tk.LEFT, padx=6)
 
-        # Keyboard bindings - use bind_all to capture keys globally
-        self.root.bind_all('<space>', lambda e: self.flip_card())
-        self.root.bind_all('<Left>', lambda e: self.prev_card())
-        self.root.bind_all('<Right>', lambda e: self.next_card())
-        self.root.bind_all('<n>', lambda e: self.add_card())
-        self.root.bind_all('<N>', lambda e: self.add_card())
-        self.root.bind_all('<e>', lambda e: self.edit_card())
-        self.root.bind_all('<E>', lambda e: self.edit_card())
-        # Also bind Return key for flipping
-        self.root.bind_all('<Return>', lambda e: self.flip_card())
+        # Keyboard bindings with focus check
+        self.root.bind_all('<space>', self._safe_keyboard_handler(self.flip_card))
+        self.root.bind_all('<Left>', self._safe_keyboard_handler(self.prev_card))
+        self.root.bind_all('<Right>', self._safe_keyboard_handler(self.next_card))
+        self.root.bind_all('<n>', self._safe_keyboard_handler(self.add_card))
+        self.root.bind_all('<N>', self._safe_keyboard_handler(self.add_card))
+        self.root.bind_all('<e>', self._safe_keyboard_handler(self.edit_card))
+        self.root.bind_all('<E>', self._safe_keyboard_handler(self.edit_card))
+        self.root.bind_all('<Return>', self._safe_keyboard_handler(self.flip_card))
+
+    def _safe_keyboard_handler(self, callback):
+        """Wrap keyboard callbacks to check if user is typing in a text widget"""
+        def handler(event):
+            # Don't trigger shortcuts if focus is on a Text widget
+            focused = self.root.focus_get()
+            if isinstance(focused, tk.Text):
+                return
+            callback()
+        return handler
 
     def display_card(self):
         """Display the current card"""
         if not self.cards:
             self.card_label.config(
-                text="No cards available.\nClick 'Add Card' to create one!",
-                bg=self.colors['card_front']
+                text="No cards available.\nClick '➕ Add Card' to create one!",
+                bg=self.colors['card_front'],
+                fg=self.colors['text_lighter']
             )
             self.flip_indicator.config(text="", bg=self.colors['card_front'])
             self.progress_label.config(text="Card 0 of 0")
+
+            # Reset card background
+            self.card_bg.bg_color = self.colors['card_front']
+            self.card_bg.delete("all")
+            self.card_bg.draw_card()
+            self.card_label.configure(bg=self.colors['card_front'])
             return
 
         card = self.cards[self.current_index]
@@ -272,14 +444,22 @@ class FlashcardApp:
         if self.is_flipped:
             text = card['back']
             bg_color = self.colors['card_back']
-            indicator = "📖 Answer"
+            indicator = "📖 ANSWER"
+            indicator_bg = "#DBEAFE"
         else:
             text = card['front']
             bg_color = self.colors['card_front']
-            indicator = "❓ Question"
+            indicator = "❓ QUESTION"
+            indicator_bg = "#FEF3C7"
 
-        self.card_label.config(text=text, bg=bg_color)
-        self.flip_indicator.config(text=indicator, bg=bg_color)
+        # Update card background
+        self.card_bg.bg_color = bg_color
+        self.card_bg.delete("all")
+        self.card_bg.draw_card()
+
+        # Update text
+        self.card_label.config(text=text, bg=bg_color, fg=self.colors['text'])
+        self.flip_indicator.config(text=indicator, bg=indicator_bg)
 
         # Update progress
         self.progress_label.config(
@@ -314,7 +494,7 @@ class FlashcardApp:
 
     def add_card(self):
         """Add a new flashcard"""
-        dialog = CardDialog(self.root, "Add New Card")
+        dialog = CardDialog(self.root, "Add New Card", self.colors)
 
         if dialog.result:
             self.cards.append(dialog.result)
@@ -333,6 +513,7 @@ class FlashcardApp:
         dialog = CardDialog(
             self.root,
             "Edit Card",
+            self.colors,
             initial_front=current_card['front'],
             initial_back=current_card['back']
         )
@@ -373,7 +554,7 @@ class FlashcardApp:
         self.is_flipped = False
         self.save_cards()
         self.display_card()
-        messagebox.showinfo("Shuffled", "Cards have been shuffled!")
+        messagebox.showinfo("Shuffled", "Cards have been shuffled! 🎲")
 
     def load_cards(self):
         """Load cards from JSON file"""
@@ -411,17 +592,18 @@ class FlashcardApp:
 
 
 class CardDialog:
-    """Dialog for adding/editing cards"""
+    """Dialog for adding/editing cards with modern design"""
 
-    def __init__(self, parent, title, initial_front="", initial_back=""):
+    def __init__(self, parent, title, colors, initial_front="", initial_back=""):
         self.result = None
+        self.colors = colors
 
         # Create dialog window
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
-        self.dialog.geometry("500x400")
+        self.dialog.geometry("600x550")
         self.dialog.resizable(False, False)
-        self.dialog.configure(bg="#F5F5F5")
+        self.dialog.configure(bg=colors['bg'])
 
         # Make it modal
         self.dialog.transient(parent)
@@ -429,83 +611,96 @@ class CardDialog:
 
         # Center the dialog
         self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (500 // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (400 // 2)
-        self.dialog.geometry(f"500x400+{x}+{y}")
+        x = (self.dialog.winfo_screenwidth() // 2) - (600 // 2)
+        y = (self.dialog.winfo_screenheight() // 2) - (550 // 2)
+        self.dialog.geometry(f"600x550+{x}+{y}")
+
+        # Header
+        header = tk.Frame(self.dialog, bg=colors['primary'], height=80)
+        header.pack(fill=tk.X)
+        header.pack_propagate(False)
+
+        tk.Label(
+            header,
+            text=title,
+            font=("Segoe UI", 20, "bold"),
+            bg=colors['primary'],
+            fg="white"
+        ).pack(pady=25)
 
         # Content
-        content_frame = tk.Frame(self.dialog, bg="#F5F5F5")
-        content_frame.pack(fill=tk.BOTH, expand=True, padx=30, pady=30)
+        content_frame = tk.Frame(self.dialog, bg=colors['bg'])
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=30)
 
         # Front of card
         tk.Label(
             content_frame,
-            text="Front (Question):",
-            font=("Helvetica", 12, "bold"),
-            bg="#F5F5F5",
-            fg="#2C3E50"
-        ).pack(anchor=tk.W, pady=(0, 5))
+            text="Front (Question)",
+            font=("Segoe UI", 12, "bold"),
+            bg=colors['bg'],
+            fg=colors['text']
+        ).pack(anchor=tk.W, pady=(0, 8))
+
+        front_container = tk.Frame(content_frame, bg="white", relief=tk.FLAT, bd=2)
+        front_container.pack(fill=tk.BOTH, expand=True, pady=(0, 25))
 
         self.front_text = tk.Text(
-            content_frame,
-            height=5,
-            font=("Helvetica", 11),
+            front_container,
+            font=("Segoe UI", 11),
             wrap=tk.WORD,
             relief=tk.FLAT,
-            borderwidth=2,
-            highlightbackground="#6C63FF",
-            highlightthickness=2
+            borderwidth=8,
+            bg="white",
+            fg=colors['text']
         )
-        self.front_text.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        self.front_text.pack(fill=tk.BOTH, expand=True)
         self.front_text.insert("1.0", initial_front)
 
         # Back of card
         tk.Label(
             content_frame,
-            text="Back (Answer):",
-            font=("Helvetica", 12, "bold"),
-            bg="#F5F5F5",
-            fg="#2C3E50"
-        ).pack(anchor=tk.W, pady=(0, 5))
+            text="Back (Answer)",
+            font=("Segoe UI", 12, "bold"),
+            bg=colors['bg'],
+            fg=colors['text']
+        ).pack(anchor=tk.W, pady=(0, 8))
+
+        back_container = tk.Frame(content_frame, bg="white", relief=tk.FLAT, bd=2)
+        back_container.pack(fill=tk.BOTH, expand=True, pady=(0, 25))
 
         self.back_text = tk.Text(
-            content_frame,
-            height=5,
-            font=("Helvetica", 11),
+            back_container,
+            font=("Segoe UI", 11),
             wrap=tk.WORD,
             relief=tk.FLAT,
-            borderwidth=2,
-            highlightbackground="#6C63FF",
-            highlightthickness=2
+            borderwidth=8,
+            bg="white",
+            fg=colors['text']
         )
-        self.back_text.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        self.back_text.pack(fill=tk.BOTH, expand=True)
         self.back_text.insert("1.0", initial_back)
 
         # Buttons
-        button_frame = tk.Frame(content_frame, bg="#F5F5F5")
+        button_frame = tk.Frame(content_frame, bg=colors['bg'])
         button_frame.pack(fill=tk.X)
 
-        save_btn = ModernButton(
+        ModernButton(
             button_frame,
-            text="Save Card",
+            text="✓ Save Card",
             command=self.save,
-            bg="#4CAF50",
-            fg="white",
-            width=15,
-            pady=10
-        )
-        save_btn.pack(side=tk.LEFT, padx=(0, 10))
+            bg_color=colors['secondary'],
+            width=180,
+            height=50
+        ).pack(side=tk.LEFT, padx=(0, 15))
 
-        cancel_btn = ModernButton(
+        ModernButton(
             button_frame,
-            text="Cancel",
+            text="✕ Cancel",
             command=self.cancel,
-            bg="#95A5A6",
-            fg="white",
-            width=15,
-            pady=10
-        )
-        cancel_btn.pack(side=tk.LEFT)
+            bg_color="#6B7280",
+            width=150,
+            height=50
+        ).pack(side=tk.LEFT)
 
         # Focus on front text
         self.front_text.focus()
