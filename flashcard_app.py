@@ -13,12 +13,15 @@ import os
 class ModernButton(tk.Button):
     """Custom styled button for modern look"""
     def __init__(self, parent, **kwargs):
+        # Extract font if provided, otherwise use default
+        font = kwargs.pop('font', ("Helvetica", 11))
+
         super().__init__(
             parent,
             relief=tk.FLAT,
             borderwidth=0,
             cursor="hand2",
-            font=("Helvetica", 11),
+            font=font,
             **kwargs
         )
         self.bind("<Enter>", self.on_enter)
@@ -242,12 +245,16 @@ class FlashcardApp:
         )
         shuffle_btn.pack(side=tk.LEFT, padx=5)
 
-        # Keyboard bindings
-        self.root.bind('<space>', lambda e: self.flip_card())
-        self.root.bind('<Left>', lambda e: self.prev_card())
-        self.root.bind('<Right>', lambda e: self.next_card())
-        self.root.bind('<n>', lambda e: self.add_card())
-        self.root.bind('<e>', lambda e: self.edit_card())
+        # Keyboard bindings - use bind_all to capture keys globally
+        self.root.bind_all('<space>', lambda e: self.flip_card())
+        self.root.bind_all('<Left>', lambda e: self.prev_card())
+        self.root.bind_all('<Right>', lambda e: self.next_card())
+        self.root.bind_all('<n>', lambda e: self.add_card())
+        self.root.bind_all('<N>', lambda e: self.add_card())
+        self.root.bind_all('<e>', lambda e: self.edit_card())
+        self.root.bind_all('<E>', lambda e: self.edit_card())
+        # Also bind Return key for flipping
+        self.root.bind_all('<Return>', lambda e: self.flip_card())
 
     def display_card(self):
         """Display the current card"""

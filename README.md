@@ -21,11 +21,11 @@ python3 flashcard_app.py
 
 ## Keyboard Shortcuts
 
-- `Space` - Flip current card
+- `Space` or `Enter` - Flip current card
 - `Left Arrow` - Previous card
 - `Right Arrow` - Next card
-- `n` - Add new card
-- `e` - Edit current card
+- `N` - Add new card (case-insensitive)
+- `E` - Edit current card (case-insensitive)
 
 ## Features Breakdown
 
@@ -37,15 +37,16 @@ python3 flashcard_app.py
 - Responsive button interactions
 
 ### Card Management
-- **Add Cards**: Click "Add Card" or press `n` to create new flashcards
-- **Edit Cards**: Click "Edit Card" or press `e` to modify existing cards
+- **Add Cards**: Click "Add Card" or press `N` to create new flashcards
+- **Edit Cards**: Click "Edit Card" or press `E` to modify existing cards
 - **Delete Cards**: Remove cards with confirmation dialog
 - **Shuffle**: Randomize the order of your flashcard deck
 
 ### Navigation
 - Navigate through cards using Previous/Next buttons or arrow keys
-- Flip cards to reveal answers using the Flip button or spacebar
+- Flip cards to reveal answers using the Flip button, spacebar, or Enter key
 - Progress indicator shows your position in the deck
+- Keyboard shortcuts work globally throughout the application
 
 ## Data Storage
 
